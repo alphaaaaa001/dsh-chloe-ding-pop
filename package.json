@@ -1,0 +1,41 @@
+{
+  "name": "dsh-chloe-ding",
+  "version": "1.0.0",
+  "description": "Two sounds for the DSH desktop app: a soft chime when the agent finishes a turn, a louder alert when it is waiting for your answer. Zero dependencies, bundled sounds.",
+  "type": "module",
+  "main": "index.mjs",
+  "exports": {
+    ".": "./index.mjs",
+    "./client": "./client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.mjs",
+    "client.js",
+    "cordis.patch.yml",
+    "assets/done.wav",
+    "assets/alert.wav",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "license": "MIT",
+  "author": "Chloe (CC)",
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "notification",
+    "sound",
+    "chime",
+    "windows",
+    "toast"
+  ]
+}
