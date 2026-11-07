@@ -2,24 +2,24 @@
   "format": 1,
   "title": {
     "en": "Chloe's Ding",
-    "zh": "鍏嬫礇浼婄殑鍙?
+    "zh": "克洛伊的叮"
   },
   "description": {
     "en": "Chimes for the DSH desktop app.",
-    "zh": "缁?DSH 妗岄潰绔殑涓ゅ０鍙€?
+    "zh": "给 DSH 桌面端的两声叮。"
   },
   "plugins": [
     {
       "name": "dsh-chloe-ding",
       "title": {
         "en": "Chloe's Ding",
-        "zh": "鍏嬫礇浼婄殑鍙?
+        "zh": "克洛伊的叮"
       },
       "description": {
         "en": "A soft chime when the agent finishes a turn, a louder one when it is waiting for your answer, plus a Windows toast when you are not looking at the window. Zero dependencies.",
-        "zh": "鍔╂墜璇村畬涓€杞交杞诲搷涓€澹帮紱瀹冨湪绛変綘鍥炶瘽鏃跺搷涓€澹版洿浜殑锛屽苟鍦ㄤ綘娌＄湅鐫€绐楀彛鏃跺脊涓€鏉?Windows 閫氱煡銆傞浂渚濊禆銆?
+        "zh": "助手说完一轮轻轻响一声；它在等你回话时响一声更亮的，并在你没看着窗口时弹一条 Windows 通知。零依赖。"
       },
-      "author": "Chloe (CC) & 浣曟灄闇?(alphaaaaa001)",
+      "author": "Chloe (CC) & 何林霜 (alphaaaaa001)",
       "homepage": "https://github.com/alphaaaaa001/dsh-chloe-ding-pop#readme",
       "repository": {
         "url": "https://github.com/alphaaaaa001/dsh-chloe-ding-pop"
@@ -27,7 +27,7 @@
       "versions": [
         {
           "version": "1.0.0",
-          "publishTimestamp": 1794062446,
+          "publishTimestamp": 1794059800,
           "source": {
             "type": "git",
             "url": "https://github.com/alphaaaaa001/dsh-chloe-ding-pop",
