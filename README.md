@@ -109,7 +109,7 @@ node -e "require('node:fs').rmSync(require('node:os').homedir()+'/.dsh/chloe-cal
 
 ## 声音从哪来
 
-`assets/done.wav`（C6 + G6 的一颗叮，1.05 秒）和 `assets/alert.wav`（A5 → D6 → G6 三连上行，1.9 秒）都是用 **`tools/make-sounds.py`** 现场合成的，纯正弦叠加 + 指数衰减，**不含任何第三方音频**——所以整个包可以放心地 MIT 出去。
+`assets/done.wav`（2093 Hz 的一声「叮」，尾巴用一对差 0.4% 的失谐泛音做出拍频，所以会自己颤——「叮—inginging」，2.2 秒）和 `assets/alert.wav`（同族但更亮更响，2637 Hz，先两下短起音，2.6 秒）都是用 **`tools/make-sounds.py`** 现场合成的：正弦叠加 + 指数衰减 + 非谐泛音，**不含任何第三方音频**——所以整个包可以放心地 MIT 出去。
 
 ```bash
 python tools/make-sounds.py   # 需要 numpy，重新生成 assets/
