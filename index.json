@@ -19,7 +19,7 @@
         "en": "A soft chime when the agent finishes a turn, a louder one when it is waiting for your answer, plus a Windows toast when you are not looking at the window. Zero dependencies.",
         "zh": "助手说完一轮轻轻响一声；它在等你回话时响一声更亮的，并在你没看着窗口时弹一条 Windows 通知。零依赖。"
       },
-      "author": "Chloe (CC)",
+      "author": "Chloe (CC) & 何林霜 (alphaaaaa001)",
       "homepage": "https://github.com/alphaaaaa001/dsh-chloe-ding-pop#readme",
       "repository": {
         "url": "https://github.com/alphaaaaa001/dsh-chloe-ding-pop"

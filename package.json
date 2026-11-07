@@ -29,6 +29,9 @@
   },
   "license": "MIT",
   "author": "Chloe (CC)",
+  "contributors": [
+    "何林霜 (alphaaaaa001)"
+  ],
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",
