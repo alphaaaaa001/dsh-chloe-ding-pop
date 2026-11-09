@@ -6,7 +6,7 @@
   },
   "description": {
     "en": "Chimes for the DSH desktop app.",
-    "zh": "给 DSH 桌面端的两声叮。"
+    "zh": "给 DSH 桌面端的三声叮。"
   },
   "plugins": [
     {
@@ -16,8 +16,8 @@
         "zh": "克洛伊的叮"
       },
       "description": {
-        "en": "A soft chime when the agent finishes a turn, a louder one when it is waiting for your answer, plus a Windows toast when you are not looking at the window. Zero dependencies.",
-        "zh": "助手说完一轮轻轻响一声；它在等你回话时响一声更亮的，并在你没看着窗口时弹一条 Windows 通知。零依赖。"
+        "en": "A soft chime when the agent finishes a turn, a louder one when it is waiting for your answer, a Question~ ding when it is waiting on an ask_user_question answer, plus a Windows toast when you are not looking at the window. Zero dependencies.",
+        "zh": "助手说完一轮轻轻响一声；它在等你回话时响一声更亮的；它抛出问题、在等你回答时也叮一下，并在你没看着窗口时弹一条 Windows 通知。零依赖。"
       },
       "author": "Chloe (CC) & 何林霜 (alphaaaaa001)",
       "homepage": "https://github.com/alphaaaaa001/dsh-chloe-ding-pop#readme",
@@ -32,6 +32,15 @@
             "type": "git",
             "url": "https://github.com/alphaaaaa001/dsh-chloe-ding-pop",
             "commit": "f46447659df11b410c0fda208d1954b7f8848ae7"
+          }
+        },
+        {
+          "version": "1.1.0",
+          "publishTimestamp": 1794207511,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/alphaaaaa001/dsh-chloe-ding-pop",
+            "commit": "ee8a12cf168502c5c9f76ef753df743dc24bef6f"
           }
         }
       ]
