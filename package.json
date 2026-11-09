@@ -1,7 +1,7 @@
 {
   "name": "dsh-chloe-ding",
-  "version": "1.0.0",
-  "description": "Two sounds for the DSH desktop app: a soft chime when the agent finishes a turn, a louder alert when it is waiting for your answer. Zero dependencies, bundled sounds.",
+  "version": "1.1.0",
+  "description": "Three chimes for the DSH desktop app: a soft one when the agent finishes a turn, a louder one when it is waiting for your answer, and a Question~ ding when it is waiting on an ask_user_question answer. Zero dependencies, bundled sounds.",
   "type": "module",
   "main": "index.mjs",
   "exports": {

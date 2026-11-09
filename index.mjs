@@ -62,6 +62,12 @@ const DEFAULTS = {
   repeatMs: 60 * 1000,
   /** 最多重复几次（不含第一声）。0＝不重复。 */
   maxRepeats: 5,
+  /** 「有个问题在等你回答」时的声音。空串＝用 alertSound。 */
+  questionSound: '',
+  /** 问句气泡的正文。默认这一句，谁用谁改。 */
+  questionToast: '(o゜▽゜)o☆Question~',
+  /** 问句也叮吗。关掉就只剩「说完了／在等回话」两种。 */
+  dingOnQuestion: true,
   /** 是否弹 Windows 气泡通知。 */
   notify: true,
   /** DSH 窗口在前台（你正看着）时，不弹气泡——只留声音。关窗口/切到别的程序时照常弹。 */
@@ -71,7 +77,8 @@ const DEFAULTS = {
   /**
    * 定时任务（cron）自己发起的那一轮，也响吗？
    * 默认**不响**：定时任务自己发起的那一轮，多半是后台活儿，弹出来只是噪音。
-   * 例外：助手明确在等你回话（信号文件活着）时那种 `alert`，照响。
+   * 例外：助手明确在等你回话（信号文件活着）时那种 `alert`，和「有个问题在等你回答」
+   * 那种 `question`，照响——问题必须叫到人。
    */
   dingOnAuto: false,
 }
@@ -113,6 +120,9 @@ export const Config = SchemaModule.Schema === undefined
     volume: SchemaModule.Schema.number().min(0).max(1).default(DEFAULTS.volume),
     repeatMs: SchemaModule.Schema.number().min(0).default(DEFAULTS.repeatMs),
     maxRepeats: SchemaModule.Schema.number().min(0).default(DEFAULTS.maxRepeats),
+    questionSound: SchemaModule.Schema.string().default(DEFAULTS.questionSound),
+    questionToast: SchemaModule.Schema.string().default(DEFAULTS.questionToast),
+    dingOnQuestion: SchemaModule.Schema.boolean().default(DEFAULTS.dingOnQuestion),
     notify: SchemaModule.Schema.boolean().default(DEFAULTS.notify),
     quietWhenFocused: SchemaModule.Schema.boolean().default(DEFAULTS.quietWhenFocused),
     nick: SchemaModule.Schema.string().default(DEFAULTS.nick),
@@ -144,6 +154,11 @@ function normalize(config) {
     signalTtlMs: pick('signalTtlMs', isNum, DEFAULTS.signalTtlMs),
     repeatMs: pick('repeatMs', isNum, DEFAULTS.repeatMs),
     maxRepeats: Math.floor(pick('maxRepeats', isNum, DEFAULTS.maxRepeats)),
+    questionSound: pick('questionSound', isStr, DEFAULTS.questionSound),
+    questionToast: pick('questionToast', isStr, DEFAULTS.questionToast),
+    dingOnQuestion:
+      raw.dingOnQuestion === true ||
+      (raw.dingOnQuestion === undefined && DEFAULTS.dingOnQuestion),
     notify: raw.notify === true || (raw.notify === undefined && DEFAULTS.notify),
     quietWhenFocused:
       raw.quietWhenFocused === true ||
@@ -350,7 +365,7 @@ export function apply(ctx, config) {
   // 优先级：设置页（DSH 设置层）> 用户配置文件 > patch 里的 config > 内置默认。
   const layered = () => normalize({ ...(config ?? {}), ...loadUserConfig(), ...readSettingsLayer() })
   const cfg = layered()
-  const hasAnySound = cfg.doneSound.length > 0 || cfg.alertSound.length > 0
+  const hasAnySound = cfg.doneSound.length > 0 || cfg.alertSound.length > 0 || cfg.questionSound.length > 0
   debug(`apply config=${JSON.stringify(config ?? null)} done=${cfg.doneSound.length} alert=${cfg.alertSound.length} notify=${cfg.notify} dingOnAuto=${cfg.dingOnAuto}`)
   if (!hasAnySound && !cfg.notify) {
     debug('apply: 没声音也没通知，直接不注册')
@@ -399,18 +414,23 @@ export function apply(ctx, config) {
 
   const fire = async (agent, kind) => {
     // 定时任务（cron）那一轮不响：后台活儿不该弹到人面前。
-    // 唯一的例外是助手明确在等你回话（信号文件活着 → kind 是 alert），那声照响。
+    // 例外两种照响：①助手明确在等你回话（信号文件活着 → alert）；②有问句在等你回答（question）。
     const recentAuto = Date.now() - lastScheduledAt < 10 * 60 * 1000
     const autoNow = recentAuto && (lastScheduledAt > lastHumanAt || autoTurn.has(agent))
-    if (!cfg.dingOnAuto && kind !== 'alert' && autoNow) {
+    if (!cfg.dingOnAuto && kind === 'done' && autoNow) {
       debug('skip: 这一轮是自动任务，不响')
       report(ctx, 'info', 'dsh-chloe-ding: 自动任务，跳过')
       return
     }
     const alert = kind === 'alert'
-    const sound = alert
-      ? (cfg.alertSound.length > 0 ? cfg.alertSound : cfg.doneSound)
-      : (cfg.doneSound.length > 0 ? cfg.doneSound : cfg.alertSound)
+    const question = kind === 'question'
+    const sound = question
+      ? (cfg.questionSound.length > 0
+        ? cfg.questionSound
+        : (cfg.alertSound.length > 0 ? cfg.alertSound : cfg.doneSound))
+      : alert
+        ? (cfg.alertSound.length > 0 ? cfg.alertSound : cfg.doneSound)
+        : (cfg.doneSound.length > 0 ? cfg.doneSound : cfg.alertSound)
     debug(`fire kind=${kind} soundLen=${sound.length} notify=${cfg.notify} quiet=${cfg.quietWhenFocused}`)
     playSound(sound, cfg.volume)
     if (cfg.notify) {
@@ -422,7 +442,7 @@ export function apply(ctx, config) {
           return
         }
       }
-      toast(cfg.nick, alert ? '在等你回话' : '说完了')
+      toast(cfg.nick, question ? cfg.questionToast : (alert ? '在等你回话' : '说完了'))
     }
     report(ctx, 'info', `dsh-chloe-ding: ${kind}`)
   }
@@ -437,9 +457,10 @@ export function apply(ctx, config) {
    * 给一个 agent 挂「状态」监听：idle 响，running 把重复作废。
    *
    * ⚠️ 踩过的坑：这些监听是挂在 **agent.ctx** 上的，不归插件生命周期管。
-   * 插件热重载一次，旧监听听还活着 → 一回合响两声；我今天重载了四次，变成**一回合响五声**，
-   * 结果一回合连响五声、开会时被连弹五个气泡。所以：①每条监听都收进 disposers，插件卸载时逐个摘掉；
-   * ②再用 Symbol 钉在 agent 身上，跨实例也不许挂第二份。
+   * 插件热重载一次，旧监听还活着 → 一回合响两声；连着重载四次，变成**一回合响五声**。
+   * 所以：①每条监听都收进 disposers，插件卸载时逐个摘掉；②再用 Symbol 钉在 agent 身上，
+   * 跨实例既不许挂第二份，也不许「旧的不在了、新的不挂」——钉的是能摘掉旧监听的句柄，
+   * 重挂之前先把它摘干净（只钉一个 true 会让插件在重载后静悄悄哑掉）。
    */
   const ATTACHED = Symbol.for('dsh-chloe-ding.attached')
 
@@ -447,18 +468,38 @@ export function apply(ctx, config) {
     if (agent === undefined || agent === null) return
     if (attached.has(agent)) return
     attached.add(agent)
+    // 热重载：上一个实例挂在它身上的监听，先摘干净再挂自己的。
     try {
-      if (agent[ATTACHED] === true) {
-        debug('attach: 已经有人挂过了，跳过')
-        return
+      const previous = agent[ATTACHED]
+      if (previous !== undefined && typeof previous.dispose === 'function') {
+        try {
+          previous.dispose()
+        } catch {
+          // 旧实例可能已经自己摘过了。
+        }
+        debug('attach: 摘掉了上一个实例的监听')
       }
-      agent[ATTACHED] = true
     } catch {
-      // 钉不上（对象冻住了之类）就继续挂，靠 disposers 兜。
+      // 拿不到就继续挂，靠下面这份 disposers 兜。
     }
 
     const disposers = []
     agentDisposers.push(disposers)
+    try {
+      agent[ATTACHED] = {
+        dispose: () => {
+          for (const dispose of disposers) {
+            try {
+              dispose?.()
+            } catch {
+              // 已经摘过了。
+            }
+          }
+        },
+      }
+    } catch {
+      // 钉不上（对象冻住了之类）就继续挂，靠 disposers 兜。
+    }
 
     // 认「这一轮是不是定时任务自己发起的」——cron 投进来的消息原样带着
     // `[SCHEDULE REMINDER BATCH]` 抬头。看到它就标上；下一条正常的人话进来再清掉。
@@ -555,6 +596,34 @@ export function apply(ctx, config) {
     }
   }
 
+  /**
+   * 这一枪「有问题要问人」是不是**真会落到用户眼前**的那一种。
+   * 子代理调 ask_user_question 会被服务直接拒掉（DELEGATED_CALLER），
+   * 所以在子会话里响一声只是噪音。判不出来就放行——宁可多响，别把该叫的人漏掉。
+   */
+  const sessionCanAsk = (session) => {
+    try {
+      const agents = ctx.get?.('agents')
+      if (agents === undefined || agents === null || typeof agents.get !== 'function') return true
+      const agent = agents.get(session?.id)
+      if (agent === undefined) return true
+      const roots = agents.roots?.()
+      if (!Array.isArray(roots)) return true
+      return roots.includes(agent)
+    } catch {
+      return true
+    }
+  }
+
+  /**
+   * 问句在等回答 → 叮 + 弹 Question~ 气泡。
+   *
+   * 判据落在 `tool/call` 上：`ask_user_question` 的调用在工具执行**之前**就进会话流水，
+   * 那一刻问句正在往界面上走——声音跟着它一起出去，正好。
+   * （不去钩 `ctx.userQuestions`：那是服务实例，热重载一换就断，还会跟 provider 抢。）
+   */
+  let lastQuestionAt = 0
+
   ctx.effect(() => {
     debug('effect: 已注册')
     const stopCreated = ctx.on('agent/created', ({ agent }) => {
@@ -566,6 +635,20 @@ export function apply(ctx, config) {
     // 用整条事件做子串判断——不猜消息结构，谁来都躲不过这段字。
     const stopSessionEvent = ctx.on('session/event', (session, event) => {
       try {
+        // ① 问句在等回答 → 叮 + 弹 Question~ 气泡。
+        if (event?.type === 'tool/call' && event?.data?.name === 'ask_user_question') {
+          if (!cfg.dingOnQuestion) return
+          if (!sessionCanAsk(session)) {
+            debug('question: 不是能问到用户的会话，跳过')
+            return
+          }
+          const now = Date.now()
+          if (now - lastQuestionAt < 1500) return
+          lastQuestionAt = now
+          debug('question: 有问句在等回答')
+          void fire(undefined, 'question')
+          return
+        }
         if (event?.type !== 'user/message') return
         const blob = JSON.stringify(event)
         const scheduled =
@@ -596,6 +679,7 @@ export function apply(ctx, config) {
     const snapshot = () => JSON.stringify([
       cfg.doneSound, cfg.alertSound, cfg.volume, cfg.repeatMs, cfg.maxRepeats,
       cfg.notify, cfg.quietWhenFocused, cfg.nick, cfg.signalTtlMs, cfg.dingOnAuto,
+      cfg.questionSound, cfg.questionToast, cfg.dingOnQuestion,
     ])
     let lastSig = snapshot()
     const configTimer = setInterval(() => {

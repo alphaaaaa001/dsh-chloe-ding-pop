@@ -105,6 +105,10 @@ window.__ModuleLoader__.load({
       const volume = typeof value.volume === 'number' ? value.volume : 0.6
       const notify = value.notify !== false
       const quiet = value.quietWhenFocused !== false
+      const questionDing = value.dingOnQuestion !== false
+      const questionToast = typeof value.questionToast === 'string' && value.questionToast.length > 0
+        ? value.questionToast
+        : '(o゜▽゜)o☆Question~'
 
       const commit = async (key, next) => {
         setSaving(key)
@@ -137,6 +141,18 @@ window.__ModuleLoader__.load({
         onChange: (event) => { void commit(key, event.target.checked) },
       })
 
+      const text = (key, current, width) => h('input', {
+        className: 'cding_input',
+        type: 'text',
+        defaultValue: current,
+        style: width === undefined ? undefined : { width },
+        onBlur: (event) => {
+          const next = String(event.target.value).trim()
+          if (next.length === 0 || next === current) return
+          void commit(key, next)
+        },
+      })
+
       const status = failed === ''
         ? (saving === '' ? null : h('span', { className: 'cding_muted' }, `正在保存 ${saving}…`))
         : h('span', { className: 'cding_err' }, `保存失败：${failed}`)
@@ -151,17 +167,27 @@ window.__ModuleLoader__.load({
 
       return h('div', { className: 'cding_page' },
         h('h2', { className: 'cding_h' }, '克洛伊的叮'),
-        h('p', { className: 'cding_p' }, '助手说完了响一声；它在等你回话时响一声更响的，并弹气泡。DSH 在前台时只响声音，不弹气泡。'),
+        h('p', { className: 'cding_p' }, '助手说完了响一声；它在等你回话时响一声更响的；它在等你回答问题的时候也叮一下，并在后台弹 Question~ 气泡。DSH 在前台时只响声音，不弹气泡。'),
         h('div', { className: 'cding_card' },
           h(Row, {
             label: '重复间隔（秒）',
-            hint: '她等回话、你一直没回时，隔多久再响一次。',
+            hint: '它等回话、你一直没回时，隔多久再响一次。',
             control: num('repeatMs', Math.round(repeatMs / 1000), 5, 600, 5),
           }),
           h(Row, {
             label: '音量',
             hint: '0 到 1。',
             control: num('volume', volume, 0, 1, 0.05),
+          }),
+          h(Row, {
+            label: '问句也叮一声',
+            hint: '它抛出问题、在等你回答的时候，也叮一下（自动任务那一轮也响）。',
+            control: box('dingOnQuestion', questionDing),
+          }),
+          h(Row, {
+            label: '问句气泡文字',
+            hint: '后台弹窗里显示的那一行。',
+            control: text('questionToast', questionToast, 220),
           }),
           h(Row, { label: '弹 Windows 气泡', control: box('notify', notify) }),
           h(Row, {

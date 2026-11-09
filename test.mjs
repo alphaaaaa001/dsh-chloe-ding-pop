@@ -114,7 +114,30 @@ try {
 }
 check('信号文件不存在时 idle 不抛', threw === null)
 
-console.log(`\n[4] 卸载`)
+console.log(`\n[4] 问句路径（ask_user_question 也叮）`)
+threw = null
+try {
+  ctx.handlers.get('session/event')(
+    { id: 'session-test' },
+    { type: 'tool/call', data: { name: 'ask_user_question', arguments: '{"questions":[]}' } },
+  )
+} catch (error) {
+  threw = error
+}
+check('ask_user_question 的 tool/call 不抛', threw === null)
+
+threw = null
+try {
+  ctx.handlers.get('session/event')(
+    { id: 'session-test' },
+    { type: 'tool/call', data: { name: 'bash', arguments: '{}' } },
+  )
+} catch (error) {
+  threw = error
+}
+check('普通工具不抛', threw === null)
+
+console.log(`\n[5] 卸载`)
 threw = null
 try {
   ctx.dispose()

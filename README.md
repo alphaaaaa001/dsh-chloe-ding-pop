@@ -1,6 +1,6 @@
 # 克洛伊的叮 · dsh-chloe-ding
 
-> **DSH 桌面端的两声「叮」。** 助手说完一轮 → 轻轻一声；它在等你回话 → 响一声更亮的，并在你没看窗口时弹一条 Windows 通知。
+> **DSH 桌面端的三声「叮」。** 助手说完一轮 → 轻轻一声；它在等你回话 → 响一声更亮的；它抛出问题、在等你回答 → 也叮一下，并在你没看窗口时弹一条 Windows 通知。
 
 零依赖（只用 `node:` 内置模块），声音文件随包走。声音与通知都交给系统：mp3/wav 走 PowerShell + WPF `MediaPlayer`，气泡走 `NotifyIcon`。
 
@@ -17,6 +17,7 @@
 | 一轮说完，DSH 在前台（你正看着） | 轻叮 | 不弹 |
 | 一轮说完，你切走了 / 关窗口 | 轻叮 | 弹「说完了」 |
 | 助手在等你回答（信号文件在） | 亮叮 | 弹「在等你回话」 |
+| 助手抛出问题、等你回答（`ask_user_question`） | 亮叮 | 弹「(o゜▽゜)o☆Question~」 |
 | 你一直不回 | 每 `repeatMs` 再响一次，最多 `maxRepeats` 次 | 同上 |
 | 你切回 DSH | — | 重复立刻停 |
 | 定时任务自己发起的那一轮 | 不响 | 不弹 |
@@ -50,7 +51,7 @@
 
 ### 1. 设置页「克洛伊的叮」
 
-设置 → 克洛伊的叮：重复间隔（秒）、音量、弹不弹气泡、前台时弹不弹。写进 DSH 的设置层。
+设置 → 克洛伊的叮：重复间隔（秒）、音量、问句也叮不叮 + 问句气泡文字、弹不弹气泡、前台时弹不弹。写进 DSH 的设置层。
 
 ### 2. 用户配置文件（改完 2 秒内生效，不用重启）
 
@@ -68,6 +69,8 @@
 |---|---|---|
 | `doneSound` | 包内 `assets/done.wav` | 正常说完时放的文件；空串＝不响 |
 | `alertSound` | 包内 `assets/alert.wav` | 「等你回话」时放；空则回落 `doneSound` |
+| `questionSound` | 空 | 「有问句等你回答」时放；空则回落 `alertSound` |
+| `questionToast` | `(o゜▽゜)o☆Question~` | 问句气泡的正文 |
 | `volume` | 0.6 | 0~1 |
 | `signalFile` | `~/.dsh/chloe-call.json` | 信号文件 |
 | `signalTtlMs` | 600000 | 信号超过这么久算过期 |
@@ -76,7 +79,8 @@
 | `notify` | true | 弹不弹气泡 |
 | `quietWhenFocused` | true | DSH 在前台时不弹气泡（只留声音） |
 | `nick` | `DSH` | 气泡标题 |
-| `dingOnAuto` | false | 定时任务那一轮也响吗（`alert` 例外，照响） |
+| `dingOnAuto` | false | 定时任务那一轮也响吗（`alert` 和 `question` 例外，照响） |
+| `dingOnQuestion` | true | 问句也叮吗（这一种不受 `dingOnAuto` 限制：问题必须叫到人） |
 
 > `dingOnAuto=false` 怎么认出「这一轮是自动任务」：`session/event` 里那条 `user/message` 原样带着 `[SCHEDULE REMINDER BATCH]` 抬头——看到就记时间，之后 10 分钟内、且中间没有真人说话，结束时就不响。
 
